@@ -1,0 +1,262 @@
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/highstock.js"></script>
+<script src="/static/js/highcharts.js"></script>
+<script src="/static/js/exporting.js"></script>
+
+<div id="room"></div>
+
+<script>
+    var gDayTable = {};
+
+    function doDrawDay(datas, pos, day, id) {
+        var name = datas[0];
+        var data = datas[1];
+
+        var vols = new Array();
+        var newData = new Array();
+
+        var tms = "";
+        for (var i = 0; i < data.length; ++i) {
+            var aday = data[i];
+            aday.pop();
+
+            var vol = aday.pop();
+            var d = aday[0];
+            var tm = gDayTable[ d ];
+            aday[0] = tm;
+
+            vols.push([ tm, vol ]);
+            newData.push( aday);
+        }
+
+        $(pos).highcharts('StockChart', {
+                title: {
+                    text: name + "_" + id + "_" + day
+                },
+
+                plotOptions: {  
+                    candlestick: {  
+                        upColor: '#DD2200',  
+                    }
+                },
+
+                /*
+                plotOptions: {  
+                    candlestick: {  
+                        color: '#33AA11',  
+                        upColor: '#DD2200',  
+                        lineColor: '#33AA11',                 
+                        upLineColor: '#DD2200',   
+                        maker:{  
+                            states:{  
+                                hover:{  
+                                    enabled:false,  
+                                }  
+                            }  
+                        }  
+                    }
+                },
+                */
+
+                    rangeSelector : {
+                        buttons : [{
+                            type : 'hour',
+                                count : 1,
+                                text : '1h'
+                        }, {
+                            type : 'day',
+                                count : 1,
+                                text : '1D'
+                        }, {
+                            type : 'all',
+                                count : 1,
+                                text : 'All'
+                        }],
+                        selected : 2,
+                        inputEnabled : false
+                    },
+
+                    tooltip:{
+                        xDateFormat: '%Y-%m-%d %A',
+                            positioner: function () { return { x: 10, y: 35 }; }
+                    },
+
+                    yAxis: [{  
+                        title: {      
+                            enable:false  
+                        },  
+                        type: 'logarithmic',
+                        height: '90%',  
+                        lineWidth:1,
+                        gridLineColor: '#346691',  
+                        gridLineWidth:0.1,  
+                        opposite:true  
+                    },{  
+                        title: {  
+                            enable:false  
+                        },  
+                        top: '90%',  
+                        height: '10%',  
+                        labels:{  
+                            x:-15  
+                        },  
+                        gridLineColor: '#346691',  
+                        gridLineWidth:0.1,  
+                        lineWidth: 1,  
+                    }],  
+
+                    series : [
+                        {
+                            name : name + ',' + id,
+                            type: 'candlestick',
+                            data : newData,
+                            tooltip: { valueDecimals: 2 },
+                            //dataGrouping: { enabled: false }
+                        },
+                        {
+                            name : "vol",
+                            type: 'column',
+                            data : vols,
+                            yAxis: 1,
+                            dataGrouping: { enabled: false }
+                        }
+                    ]
+        });
+    }
+
+
+    function doDrawMin(data, pos, day, id) {
+        var vols = new Array();
+        var pris = new Array();
+        for (var i = 0; i < data.length-1; ++i) {
+                var tm =  data[i][0];
+                var pri = data[i][1];
+                var vol = data[i][2];
+                tm = (tm + 8 * 3600) * 1000 ;
+                pris.push([ tm, pri ]);
+                vols.push([ tm, vol ]);
+        }
+
+        $(pos).highcharts('StockChart', {
+            rangeSelector : {
+                buttons : [ 
+                {
+                    type : 'min',
+                    count : 1,
+                    text : '1min'
+                }, 
+                {
+                    type : 'hour',
+                    count : 1,
+                    text : '1hour'
+                }, 
+                {
+                    type : 'day',
+                    count : 1,
+                    text : '1D'
+                }, {
+                    type : 'all',
+                    count : 1,
+                    text : 'All'
+                }],
+                selected : 3,
+                inputEnabled : false
+            },
+
+            title: { text: id + "_" + day },
+            yAxis: [{  
+                title: {      
+                   enable:false  
+                },  
+                type: 'logarithmic',
+                height: '70%',  
+                lineWidth:1,//Y轴边缘线条粗细  
+                gridLineColor: '#346691',  
+                gridLineWidth:0.1,  
+                opposite:true  
+            },{  
+                title: {  
+                   enable:false  
+                },  
+                top: '75%',  
+                height: '25%',  
+                labels:{  
+                    x:-15  
+                },  
+                gridLineColor: '#346691',  
+                gridLineWidth:0.1,  
+                lineWidth: 1,  
+            }],  
+            series : [
+                {
+                    name : id,
+                    data : pris,
+                    //pointStart : Date.UTC(2014,11,1),
+                    //pointInterval: 3600*1000,
+                    tooltip : { valueDecimals:2},
+                    dataGrouping: {enabled: false}
+                },
+                {
+                    name : "vol",
+                    type: 'column',
+                    data : vols,
+                    yAxis: 1,
+                    dataGrouping: {enabled: false}
+                },
+            ]
+        })
+    }
+
+    function drawDay(pos, id, day) {
+	    var url = '/do?action=day&day=' + day + '&gid=' + id + '&callback=?';
+        $.getJSON(url, function(data) { doDrawDay(data, pos, day, id);});
+    }
+
+    function drawMin(pos, id, day) {
+	    var url = '/do?action=tick&day=' + day + '&gid=' + id + '&callback=?';
+        $.getJSON(url, function(data) { doDrawMin(data, pos, day, id);});
+    }
+
+    function drawHQ(id, day) {
+        var idK = "day_" + id;
+        var idM = "min_" + id;
+
+        var nodeK = "<div id='" + idK + "' style='height: 400px; width: 25%; float:left; display:inline'></div>";
+        var nodeM = "<div id='" + idM + "' style='height: 400px; width: 25%; float:left; display:inline'></div>";
+        var node = "<div>" + nodeK + nodeM + "</div>";
+        $('#room').append( node );
+
+        drawDay("#"+idK, id, day);
+        drawMin("#"+idM, id, day);
+    }
+
+    var str = window.location.href
+    var str = window.location.href
+    var strs = str.split("?");
+    str = strs[1];
+    strs = str.split(",");
+    var day = strs[0];
+    var bk = strs[1];
+
+    var url = '/do?action=dayTable&callback=?';
+    $.getJSON(url, function(data) { 
+        gDayTable = data;
+        var url = '/do?action=bkday&day=' + day + '&name=' + bk + '&callback=?';
+        $.getJSON(url, function(data) { 
+            var num = data.length;
+            var step = num / 2;
+            if (step > 5) step = 5;
+            for (var i = 0; i < step; ++i) {
+                var d = data[num-i-1];
+                var gid = d[0];
+                drawHQ(gid, day);
+
+                var d1 = data[i];
+                var gid1 = d1[0];
+                drawHQ(gid1, day);
+            }
+        });
+    })
+
+</script>
+

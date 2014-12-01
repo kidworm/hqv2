@@ -1,0 +1,60 @@
+shit from static
+<script src="/static/js/jquery.min.js"></script>
+<script>
+    function getDay(gid, day)
+    {
+        var url = 'http://market.finance.sina.com.cn/downxls.php?date=2014-11-28&symbol=sh600657';
+        /*
+        $.get(url, function(data, status) {
+             alert("Data: " + data + "\nStatus: " + status);
+        });
+        */
+
+        $("$.ajax.load").load(url,
+            function (responseText, textStatus, XMLHttpRequest){
+                alert(responseText);
+                //this;//在这里this指向的是当前的DOM对象，即$(".ajax.load")[0] 
+                //alert(responseText);//请求返回的内容 //alert(textStatus);//请求状态：success，error //alert(XMLHttpRequest);//XMLHttpRequest对象 
+            }
+        );
+    }
+
+/* 创建 XMLHttpRequest 对象 */
+var xmlHttp;
+function GetXmlHttpObject(){
+    if (window.XMLHttpRequest){
+      // code for IE7+, Firefox, Chrome, Opera, Safari
+      xmlhttp=new XMLHttpRequest();
+    }else{// code for IE6, IE5
+      xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    return xmlhttp;
+}
+// -----------ajax方法-----------//
+function getLabelsGet(){
+    xmlHttp=GetXmlHttpObject();
+    if (xmlHttp==null){
+        alert('您的浏览器不支持AJAX！');
+        return;
+    }
+
+    var url = 'http://market.finance.sina.com.cn/downxls.php?date=2014-11-28&symbol=sh600657';
+    xmlHttp.open("GET",url,true);
+    xmlHttp.onreadystatechange=getOkGet;//发送事件后，收到信息了调用函数
+    xmlHttp.send();
+}
+                   
+function getOkGet(){
+    if(xmlHttp.readyState==1||xmlHttp.readyState==2||xmlHttp.readyState==3){
+        // 本地提示：加载中
+                         
+    }
+    if (xmlHttp.readyState==4 && xmlHttp.status==200){
+        var d= xmlHttp.responseText;
+        alert(d);
+    }
+}
+    getLabelsGet();
+
+    //getDay('600000', 20141127);
+</script>
